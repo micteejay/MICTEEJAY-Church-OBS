@@ -1,0 +1,25 @@
+# Build outputs and distribution packages
+dist/
+dist_ci/
+build/
+build_*/
+*.tar.gz
+*.zip
+*.ddeb
+*.deb
+
+# Dependencies and caches
+node_modules/
+.deps/
+.ccache/
+.cache/
+
+# Temporary files and logs
+*.log
+/tmp/
+
+# OS and Editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
