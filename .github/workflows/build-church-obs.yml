@@ -9,7 +9,7 @@ on:
 jobs:
   build-windows:
     name: Build Windows x64 🪟
-    runs-on: windows-latest
+    runs-on: windows-2022
     defaults:
       run:
         shell: pwsh
@@ -17,22 +17,29 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 0
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@master
         with:
-          python-version: '3.11'
+          version: 1.11.1
 
-      - name: Build Church OBS for Windows
+      - name: Configure CMake for Windows
         run: |
           cd obs-studio
-          .github/scripts/Build-Windows.ps1 -Target x64 -Configuration Release
+          cmake -B build_x64 -G "Visual Studio 17 2022" -A x64 -DCMAKE_COMPILE_WARNING_AS_ERROR=OFF -DENABLE_BROWSER=OFF
 
-      - name: Package Windows Release
+      - name: Build Church OBS (Release)
         run: |
-          Compress-Archive -Path obs-studio/build_x64/install/* -DestinationPath Church-OBS-Windows-x64.zip
+          cd obs-studio
+          cmake --build build_x64 --config Release --parallel
+
+      - name: Install & Package Windows Release
+        run: |
+          cd obs-studio
+          cmake --install build_x64 --prefix ../dist_ci/windows --config Release
+          cd ..
+          Compress-Archive -Path dist_ci/windows/* -DestinationPath Church-OBS-Windows-x64.zip
 
       - name: Upload Windows Build Artifact
         uses: actions/upload-artifact@v4
@@ -47,10 +54,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 0
 
-      - name: Install Build Dependencies
+      - name: Install Linux Build Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build build-essential qt6-base-dev \
@@ -58,17 +64,17 @@ jobs:
             libswscale-dev libswresample-dev libx11-dev libgl-dev libpulse-dev \
             libv4l-dev libwayland-dev libpipewire-0.3-dev libcurl4-openssl-dev
 
-      - name: Configure CMake
+      - name: Configure CMake for Linux
         run: |
           cd obs-studio
           cmake -B build_release -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BROWSER=OFF
 
-      - name: Compile OBS Studio
+      - name: Compile Church OBS
         run: |
           cd obs-studio
           ninja -C build_release
 
-      - name: Install & Package
+      - name: Install & Package Linux Release
         run: |
           cd obs-studio
           cmake --install build_release --prefix ../dist_ci/linux
@@ -80,4 +86,3 @@ jobs:
         with:
           name: Church-OBS-Linux-x86_64
           path: Church-OBS-Linux-x86_64.tar.gz
-

@@ -1,0 +1,14 @@
+.DS_Store
+
+node_modules/
+dist/
+dist-helper/
+
+.qodo/
+
+*.log
+*.tmp
+
+electron/resources/win-iconset/
+Thumbs.db
+Bible Song Pro_Screenshot/.DS_Store

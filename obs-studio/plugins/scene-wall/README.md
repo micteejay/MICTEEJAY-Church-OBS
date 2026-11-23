@@ -1,0 +1,162 @@
+# SceneWall
+
+**SceneWall is a port of vMix's source list to OBS Studio** — a dockable panel where every scene becomes a live thumbnail you can switch with a single click.
+
+All of the functionality is taken from vMix: live thumbnails, tab groups with colors, collapsible scene bars, a wrapping (flex-like) layout, Program/Preview indicators and the surrounding mouse interactions. SceneWall adds only three things of its own:
+
+- **Size / Autosize** — a per-tab thumbnail size slider plus one-click Autosize
+- **Realtime** — a toggle for high-frequency thumbnail refresh
+- **Naming and reordering tabs** — the ability to name tabs and change their order
+
+![SceneWall docked in OBS Studio](scenewall_screenshot.png)
+
+> **Note about the screenshot:** the middle toolbar that normally sits between the *Preview* and *Program* views is not visible here, because the author runs the companion plugin **[studio-no-transition-strip](https://github.com/studiokrause/studio-no-transition-strip)**, which moves OBS's transition strip (Transition button, T-bar and quick transitions) into a movable dock.
+
+## What it is
+
+A dock panel that shows the scenes of the current scene collection as live thumbnails in a wrapping grid that reflows to the width of the dock. Built for operators who work with many scenes (cameras, overlays, helpers) and want to see them all at once — similar to a video switcher's multiview.
+
+Scenes can be collapsed into compact vertical bars and the grid reflows as the dock is resized. On top of the vMix behaviour, each tab keeps its own thumbnail size, set with the Size slider or with a single *Autosize* click; switching tabs moves the slider to the active tab's size.
+
+## Features
+
+Everything below mirrors vMix's source list. The three items marked **(added by SceneWall)** are the ones SceneWall contributes on top of the port.
+
+### Thumbnails and layout
+
+- **Live scene thumbnails** rendered through the OBS graphics subsystem.
+- **Inactive scenes stay live (Multiview model)** — every thumbnail holds its scene showing (the same `obs_source_inc_showing` / `obs_source_dec_showing` mechanism the native Multiview uses), so game capture, display/window capture, browser and media sources keep rendering even when the scene is neither in Preview nor Program.
+- **Wrapping layout** — thumbnails and collapsed bars reflow like a flex container when the dock is resized.
+- **Autosize** **(added by SceneWall)** — computes the largest size that fits every scene of the current tab in the visible area, then applies it to that tab only. Collapsed bars count as narrower, so packing stays efficient.
+- **Realtime mode** **(added by SceneWall)** — refreshes every visible thumbnail at the frame rate OBS is currently running at, after a resource-usage confirmation. Realtime raises CPU/GPU cost noticeably with many scenes; normal mode uses a cheap 500 ms scheduler.
+- **Budgeted scheduler** — normal mode uses one shared timer with a fixed cap on GPU readbacks per tick (2). Hidden dock, other tabs, collapsed scenes and off-screen thumbnails cost nothing.
+- **Optimized rendering** — GPU scratch buffers are allocated once per thumbnail and reused, and anything not actually visible (hidden dock, other tab, scrolled out of view) is skipped entirely.
+
+### Tabs and scenes
+
+- **Tab groups with colors** used for the tab buttons and for the headers of the scenes assigned to them.
+- **Scene assignment** keyed by the scene's **stable UUID**, so renaming a scene never loses its tab, order or collapsed state.
+- **Per-collection config** — tabs, scene order and collapsed state are stored separately for each OBS scene collection and restored when you switch collections.
+- **Migration** — configs from older SceneWall versions (scene names instead of UUIDs) migrate automatically on load; removed scenes drop out of the lists without shifting other scenes onto their slots.
+- **Naming and reordering tabs** **(added by SceneWall)** — tabs can be named and their order changed by dragging a tab button to a new position; both are saved between sessions.
+- **Drag & drop reordering of scenes** — drag a thumbnail inside a tab to reorder it. Each tab keeps its own order, completely independent of the scene list in OBS. Saved between sessions.
+
+### Scene headers and indicators
+
+- **Scene headers** with white text on a configurable background color. Right-click a header to collapse the scene into a slim vertical bar; right-click again to expand it.
+- **Thumbnail frames** — every thumbnail is outlined with a thin 1px grey frame so scenes are visually separated. The active scene stands out with a thicker frame: red for the current Program scene, green for the current Preview scene in Studio Mode.
+- **Localization** — English, German, Polish, Ukrainian, Italian, Spanish and French. The default title of the **All** tab is translated too.
+
+## Changes in 1.7
+
+- Renamed the plugin bundle to `scene-wall` (OBS 34 layout: `plugins/scene-wall/scene-wall.dll`).
+- Dock position is restored after OBS finishes loading plugins.
+- Existing `plugin_config/SceneWall/tabs.json` is copied to `plugin_config/scene-wall/`.
+
+## Changes in 1.6
+
+- Thumbnail size is stored per tab: each tab keeps its own Size slider value, Autosize applies to the active tab only, and switching tabs moves the slider to that tab's size. Old configs migrate automatically.
+- Right-click on an empty panel area opens a small menu with *Add scene* and *About*; the About button was removed from the Settings dialog.
+- Release packaging unchanged (OBS 33 bundle layout).
+
+## Changes in 1.4
+
+- Adapted Windows packaging to the OBS 33 plugin layout.
+- Kept inactive capture, browser and media scenes rendering like native Multiview.
+- Restored full per-thumbnail refresh in Realtime mode; normal mode keeps the GPU budget.
+- Corrected Autosize to follow layout order, margins, collapsed bars and available width.
+- Stored scene assignments, order and collapsed state by stable UUID per scene collection.
+- Fixed scene drag reordering so it does not delete the active drag source.
+
+### What SceneWall does not do
+
+SceneWall only shows scenes and switches between them. It does not control sources: no visibility toggles, no locking, no audio mute and no volume metering.
+
+## Mouse and keyboard
+
+| Action | Result |
+| --- | --- |
+| **Left click** on a thumbnail | Switch to that scene |
+| **Left drag** on a thumbnail | Reorder it inside the current tab |
+| **Right click** on a scene header | Collapse / expand that scene |
+| **Right click** on a thumbnail | In Studio Mode, set it as the Preview scene. A plain right-click on a thumbnail never opens a menu |
+| **Right click** on an empty panel area | Small menu: *Add scene*, *About* |
+| **CTRL + click** on a thumbnail | Plugin menu: *Assign to Tab*, *Remove from Tab*, *Collapse / Expand*, *Filters*, *Rename*, *Add scene* |
+
+## Tabs and assignment
+
+- The **All** tab always shows every scene. Its title can be renamed and it cannot be deleted. On first run it uses the OBS interface language.
+- Create, rename, recolor and remove tabs in **Settings** (the gear button). Clicking a color cell opens a color picker.
+- To put a scene in a group, **CTRL + click** it and choose *Assign to Tab*. A scene belongs to one tab; unassigned scenes appear only in **All**.
+- A scene's header takes the color of the tab it is **assigned** to, so its group stays recognisable even while browsing **All**.
+
+## Installation
+
+### Release archive
+
+`scene-wall-1.7-OBS34-Windows-x64.zip` contains this layout:
+
+```text
+README.md
+plugins/
+└── scene-wall/
+    ├── scene-wall.dll
+    └── data/
+        └── locale/*.ini
+```
+
+Extract archive contents into OBS root:
+
+- Installed OBS: `C:\ProgramData\obs-studio\`
+- Portable OBS: `<portable>\`
+
+Resulting plugin path is `plugins/scene-wall/scene-wall.dll`, with locale files under `plugins/scene-wall/data/locale/`. This layout is the only one OBS 34 loads; `obs-plugins\64bit` and `SceneWall\bin\64bit` are legacy.
+
+Restart OBS Studio after installation.
+
+Manual copy, installed OBS:
+
+1. Copy `scene-wall.dll` to `C:\ProgramData\obs-studio\plugins\scene-wall\`
+2. Copy the `locale` folder to `C:\ProgramData\obs-studio\plugins\scene-wall\data\`
+
+Manual copy, portable OBS:
+
+1. Copy `scene-wall.dll` to `<portable>\plugins\scene-wall\`
+2. Copy the `locale` folder to `<portable>\plugins\scene-wall\data\`
+
+SceneWall uses only libraries shipped with OBS (`obs.dll`, `obs-frontend-api.dll`, Qt6).
+
+## Building from source
+
+Requirements: Windows 10/11 x64, Visual Studio 2019/2022 (MSVC x64), CMake 3.16+, an installed OBS SDK and a Qt6 CMake package. Pass both as cache variables — no paths are hardcoded:
+
+```powershell
+cmake -S . -B build -DOBS_SDK_DIR=<path-to-obs-sdk> -DOBS_QT_CMAKE_DIR=<path-to-Qt6-cmake>
+cmake --build build --config Release
+```
+
+`OBS_QT_CMAKE_DIR` is optional; when given it is appended to `CMAKE_PREFIX_PATH`. Without it, CMake uses the Qt6 package from the default search path.
+
+The resulting `build/Release/scene-wall.dll` is the plugin. `cmake --install build --config Release` installs the OBS 34 bundle layout: `scene-wall.dll` next to `data/locale/*.ini` under `plugins/scene-wall`.
+
+## Version
+
+The current version is **1.7**.
+
+## License
+
+MIT License
+
+Copyright (c) 2026 Studio Krause
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+## Credits
+
+- **Author:** Studio Krause
+- **Model / development:** Tencent Hy4 Preview / Muse Spark 1.3
+- **Companion plugin:** [studio-no-transition-strip](https://github.com/studiokrause/studio-no-transition-strip)

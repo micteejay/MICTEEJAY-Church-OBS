@@ -3,6 +3,7 @@ dist/
 dist_ci/
 build/
 build_*/
+obs-studio/build_*/
 *.tar.gz
 *.zip
 *.ddeb
@@ -10,7 +11,9 @@ build_*/
 
 # Dependencies and caches
 node_modules/
+**/node_modules/
 .deps/
+**/.deps/
 .ccache/
 .cache/
 
