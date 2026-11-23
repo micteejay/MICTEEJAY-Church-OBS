@@ -27,7 +27,16 @@ jobs:
       - name: Configure CMake for Windows
         run: |
           cd obs-studio
-          cmake -B build_x64 -G "Visual Studio 17 2022" -A x64 -DCMAKE_COMPILE_WARNING_AS_ERROR=OFF -DENABLE_BROWSER=OFF
+          cmake -B build_x64 -G "Visual Studio 17 2022" -A x64 `
+            -DCMAKE_COMPILE_WARNING_AS_ERROR=OFF `
+            -DENABLE_BROWSER=OFF `
+            -DENABLE_AJA=OFF `
+            -DENABLE_WEBRTC=OFF `
+            -DENABLE_VST=OFF `
+            -DENABLE_SCRIPTING=OFF `
+            -DENABLE_NVAFX=OFF `
+            -DENABLE_NVVFX=OFF `
+            -DVIRTUALCAM_GUID="A3FCE0F5-3493-419F-958A-ABA1250EC20B"
 
       - name: Build Church OBS (Release)
         run: |
@@ -39,6 +48,7 @@ jobs:
           cd obs-studio
           cmake --install build_x64 --prefix ../dist_ci/windows --config Release
           cd ..
+          Copy-Item -Recurse -Force Bible-Song-Pro dist_ci/windows/Bible-Song-Pro
           Compress-Archive -Path dist_ci/windows/* -DestinationPath Church-OBS-Windows-x64.zip
 
       - name: Upload Windows Build Artifact
@@ -62,12 +72,21 @@ jobs:
           sudo apt-get install -y cmake ninja-build build-essential qt6-base-dev \
             libqt6svg6-dev qt6-wayland libavcodec-dev libavformat-dev libavutil-dev \
             libswscale-dev libswresample-dev libx11-dev libgl-dev libpulse-dev \
-            libv4l-dev libwayland-dev libpipewire-0.3-dev libcurl4-openssl-dev
+            libv4l-dev libwayland-dev libpipewire-0.3-dev libcurl4-openssl-dev \
+            libasound2-dev libxkbcommon-dev libxcomposite-dev libxrandr-dev \
+            libxinerama-dev libxfixes-dev libjansson-dev uuid-dev libmbedtls-dev
 
       - name: Configure CMake for Linux
         run: |
           cd obs-studio
-          cmake -B build_release -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BROWSER=OFF
+          cmake -B build_release -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_COMPILE_WARNING_AS_ERROR=OFF \
+            -DENABLE_BROWSER=OFF \
+            -DENABLE_AJA=OFF \
+            -DENABLE_WEBRTC=OFF \
+            -DENABLE_NVENC=OFF \
+            -DENABLE_VLC=OFF \
+            -DENABLE_VST=OFF
 
       - name: Compile Church OBS
         run: |
@@ -79,6 +98,7 @@ jobs:
           cd obs-studio
           cmake --install build_release --prefix ../dist_ci/linux
           cd ..
+          cp -r Bible-Song-Pro dist_ci/linux/
           tar -czf Church-OBS-Linux-x86_64.tar.gz -C dist_ci/linux .
 
       - name: Upload Linux Build Artifact
