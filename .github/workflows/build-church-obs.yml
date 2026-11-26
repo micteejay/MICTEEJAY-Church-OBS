@@ -19,11 +19,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Ninja
-        uses: ashutoshvarma/setup-ninja@master
-        with:
-          version: 1.11.1
-
       - name: Configure CMake for Windows
         run: |
           cd obs-studio
@@ -38,15 +33,15 @@ jobs:
             -DENABLE_NVVFX=OFF `
             -DVIRTUALCAM_GUID="A3FCE0F5-3493-419F-958A-ABA1250EC20B"
 
-      - name: Build Church OBS (Release)
+      - name: Build Church OBS (RelWithDebInfo)
         run: |
           cd obs-studio
-          cmake --build build_x64 --config Release --parallel
+          cmake --build build_x64 --config RelWithDebInfo --parallel -- /consoleLoggerParameters:Summary /noLogo
 
       - name: Install & Package Windows Release
         run: |
           cd obs-studio
-          cmake --install build_x64 --prefix ../dist_ci/windows --config Release
+          cmake --install build_x64 --prefix ../dist_ci/windows --config RelWithDebInfo
           cd ..
           Copy-Item -Recurse -Force Bible-Song-Pro dist_ci/windows/Bible-Song-Pro
           Compress-Archive -Path dist_ci/windows/* -DestinationPath Church-OBS-Windows-x64.zip
@@ -69,12 +64,23 @@ jobs:
       - name: Install Linux Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build build-essential qt6-base-dev \
-            libqt6svg6-dev qt6-wayland libavcodec-dev libavformat-dev libavutil-dev \
-            libswscale-dev libswresample-dev libx11-dev libgl-dev libpulse-dev \
-            libv4l-dev libwayland-dev libpipewire-0.3-dev libcurl4-openssl-dev \
-            libasound2-dev libxkbcommon-dev libxcomposite-dev libxrandr-dev \
-            libxinerama-dev libxfixes-dev libjansson-dev uuid-dev libmbedtls-dev
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build pkg-config libglib2.0-dev \
+            libcurl4-openssl-dev \
+            libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavutil-dev \
+            libswresample-dev libswscale-dev \
+            libjansson-dev uthash-dev libsimde-dev zlib1g-dev uuid-dev \
+            libx11-dev libx11-xcb-dev libxcb1-dev libxcb-randr0-dev libxcb-shm0-dev \
+            libxcb-xinerama0-dev libxcb-composite0-dev libxcb-xfixes0-dev libxss-dev \
+            libxkbcommon-dev libxcomposite-dev libxdamage-dev \
+            libgl1-mesa-dev libgles2-mesa-dev libglvnd-dev libdrm-dev libpci-dev \
+            libwayland-dev libpipewire-0.3-dev libpulse-dev libasound2-dev \
+            libx264-dev libmbedtls-dev libspeexdsp-dev libudev-dev libv4l-dev libva-dev \
+            libfontconfig-dev libfreetype6-dev \
+            libluajit-5.1-dev python3-dev swig \
+            nlohmann-json3-dev libwebsocketpp-dev libasio-dev libqrcodegencpp-dev \
+            qt6-base-dev libqt6svg6-dev qt6-base-private-dev qt6-wayland \
+            libvpl-dev
 
       - name: Configure CMake for Linux
         run: |
